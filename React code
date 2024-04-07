@@ -1,0 +1,111 @@
+import axios from "axios";
+import React, { useState } from "react";
+
+const Form = () => {
+  const [rows, setRows] = useState([
+    { name: "", city: "", localDate: "", file: null },
+  ]);
+
+  const handleInputChange = (index, event) => {
+    const { name, value } = event.target;
+    const newRows = [...rows];
+    newRows[index][name] = value;
+    setRows(newRows);
+  };
+
+  const handleFileChange = (index, event) => {
+    const { files } = event.target;
+    const newRows = [...rows];
+    newRows[index]["file"] = files[0];
+    setRows(newRows);
+  };
+
+  const handleAddRow = () => {
+    setRows([...rows, { name: "", city: "", localDate: "", file: null }]);
+  };
+
+  const handleRemoveRow = (index) => {
+    const newRows = [...rows];
+    newRows.splice(index, 1);
+    setRows(newRows);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      const formData = new FormData();
+
+      // Append JSON data
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(rows)], { type: "application/json" })
+      );
+
+      // Append files
+      rows.forEach((row, index) => {
+        if (row.file) {
+          formData.append("files", row.file);
+        }
+      });
+
+      const response = await axios.post(
+        "http://localhost:8080/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error occurred:", error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {rows.map((row, index) => (
+        <div key={index}>
+          <input
+            type="text"
+            placeholder="Name"
+            name="name"
+            value={row.name}
+            onChange={(event) => handleInputChange(index, event)}
+          />
+          <input
+            type="text"
+            placeholder="City"
+            name="city"
+            value={row.city}
+            onChange={(event) => handleInputChange(index, event)}
+          />
+          <input
+            type="text"
+            placeholder="Local Date"
+            name="localDate"
+            value={row.localDate}
+            onChange={(event) => handleInputChange(index, event)}
+          />
+          <input
+            type="file"
+            name="file"
+            onChange={(event) => handleFileChange(index, event)}
+          />
+          <button type="button" onClick={() => handleRemoveRow(index)}>
+            Remove
+          </button>
+        </div>
+      ))}
+      <button type="button" onClick={handleAddRow}>
+        Add Row
+      </button>
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
+
+export default Form;
